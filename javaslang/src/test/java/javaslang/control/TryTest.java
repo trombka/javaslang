@@ -11,10 +11,13 @@ import javaslang.collection.Seq;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 
 public class TryTest extends AbstractValueTest {
@@ -898,6 +901,32 @@ public class TryTest extends AbstractValueTest {
     @Test
     public void shouldEnsureThatIdentityCheckedFunctionReturnsIdentity() throws Throwable {
         assertThat(Function.identity().apply(1)).isEqualTo(1);
+    }
+
+    @Test
+    public void shouldNotRethrowOnSuccess() throws IOException {
+        assertThat(Try.success(1).getOrElseRethrow(IOException.class)).isEqualTo(1);
+    }
+
+    @Test
+    public void shouldRethrowExactException() throws IOException {
+        assertThatThrownBy(() -> {
+            Try.failure(new IOException()).getOrElseRethrow(IOException.class);
+        }).isInstanceOf(IOException.class);
+    }
+
+    @Test
+    public void shouldRethrowSubclassedException() throws IOException {
+        assertThatThrownBy(() -> {
+            Try.failure(new FileNotFoundException()).getOrElseRethrow(IOException.class);
+        }).isInstanceOf(FileNotFoundException.class);
+    }
+
+    @Test
+    public void shouldThrowNonFatalWhenExceptionTypeMismatched() throws IOException {
+        assertThatThrownBy(() -> {
+            Try.failure(new IOException()).getOrElseRethrow(FileNotFoundException.class);
+        }).isInstanceOf(Try.NonFatalException.class).matches(nf -> IOException.class.isInstance(nf.getCause()));
     }
 
     // -- helpers

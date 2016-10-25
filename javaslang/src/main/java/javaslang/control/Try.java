@@ -514,6 +514,14 @@ public interface Try<T> extends Value<T> {
         }
     }
 
+    default <X extends Throwable> T getOrElseRethrow(Class<X> exceptionType) throws X {
+        if (isFailure() && exceptionType.isInstance(getCause())) {
+            throw exceptionType.cast(getCause());
+        } else {
+            return get();
+        }
+    }
+
     /**
      * Applies the action to the value of a Success or does nothing in the case of a Failure.
      *
